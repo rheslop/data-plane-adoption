@@ -13,7 +13,7 @@ During adoption, the {block_storage} volume services that ran on edge site compu
 .Prerequisites
 
 * You have completed the previous adoption steps.
-* The per-site {Ceph} secrets (`ceph-conf-central`, `ceph-conf-dcn1`, `ceph-conf-dcn2`) exist and contain the configuration and keyrings for each site's {Ceph} cluster. For more information, see xref:configuring-a-ceph-backend_migrating-databases[Configuring a {Ceph} back end].
+* The `ceph-conf-files` secret contains the configuration and keyrings for all {Ceph} clusters in your DCN deployment. For more information, see xref:configuring-a-ceph-backend_migrating-databases[Configuring a {Ceph} back end].
 * The `extraMounts` property of the `OpenStackControlPlane` CR is configured to mount the {Ceph} configuration to all {block_storage} instances.
 * You have stopped the {block_storage} on all DCN nodes. For more information, see xref:stopping-openstack-services_{context}[Stopping {rhos_prev_long} services]. On edge sites, the {block_storage} volume service runs on compute nodes with the service name `tripleo_cinder_volume.service`.
 
@@ -22,7 +22,7 @@ During adoption, the {block_storage} volume services that ran on edge site compu
 . Retrieve the `fsid` for each {Ceph} cluster in your DCN deployment. The `fsid` is used as the `rbd_secret_uuid` for libvirt integration:
 +
 ----
-$ oc get secret ceph-conf-central -o json | jq -r '.data | to_entries[] | select(.key | endswith(".conf")) | "\(.key): \(.value | @base64d)"' | grep fsid
+$ oc get secret ceph-conf-files -o json | jq -r '.data | to_entries[] | select(.key | endswith(".conf")) | "\(.key): \(.value | @base64d)"' | grep fsid
 ----
 
 . Create a patch file for the {block_storage} with multiple {Ceph} back ends. The following example shows a DCN deployment with a central site and two edge sites:
@@ -130,23 +130,22 @@ Specifies the `fsid` of the DCN2 edge {Ceph} cluster.
 $ oc patch openstackcontrolplane openstack --type=merge --patch-file cinder_dcn_patch.yaml
 ----
 
-. Configure the {block_storage} backup service. In this example DCN deployment the backup service runs at the central site and uses the central {Ceph} cluster. Add the `cinderBackups` section to your patch file and re-apply it:
+. Configure the {block_storage} backup service. In this example DCN deployment the backup service runs at the central site and uses the central {Ceph} cluster. Add the `cinderBackup` section to your patch file and re-apply it:
 +
 [subs="+quotes"]
 ----
 $ cat << EOF >> cinder_dcn_patch.yaml
-      cinderBackups:
-        central:
-          networkAttachments:
-          - storage
-          replicas: 1
-          customServiceConfig: |
-            [DEFAULT]
-            backup_driver=cinder.backup.drivers.ceph.CephBackupDriver
-            backup_ceph_conf=/etc/ceph/central.conf
-            backup_ceph_user=openstack
-            backup_ceph_pool=backups
-            storage_availability_zone=az-central
+      cinderBackup:
+        networkAttachments:
+        - storage
+        replicas: 1
+        customServiceConfig: |
+          [DEFAULT]
+          backup_driver=cinder.backup.drivers.ceph.CephBackupDriver
+          backup_ceph_conf=/etc/ceph/central.conf
+          backup_ceph_user=openstack
+          backup_ceph_pool=backups
+          storage_availability_zone=az-central
 EOF
 $ oc patch openstackcontrolplane openstack --type=merge --patch-file cinder_dcn_patch.yaml
 ----

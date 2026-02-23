@@ -36,7 +36,7 @@ The new {image_service} endpoints are backed by MetalLB load balancer IPs that y
 .Prerequisites
 
 * You have completed the previous adoption steps.
-* The per-site {Ceph} secrets (`ceph-conf-central`, `ceph-conf-dcn1`, `ceph-conf-dcn2`) exist and contain the configuration and keyrings for each site's {Ceph} cluster. For more information, see xref:configuring-a-ceph-backend_migrating-databases[Configuring a {Ceph} back end].
+* The `ceph-conf-files` secret contains the configuration and keyrings for all {Ceph} clusters in your DCN deployment. For more information, see xref:configuring-a-ceph-backend_migrating-databases[Configuring a {Ceph} back end].
 * The `extraMounts` property of the `OpenStackControlPlane` CR is configured to mount the {Ceph} configuration to all Glance instances.
 * You have stopped the {image_service} on all DCN nodes. If your deployment includes `DistributedComputeHCIScaleOut` or `DistributedComputeScaleOut` nodes, you have also stopped HAProxy on those nodes. For more information, see xref:stopping-openstack-services_{context}[Stopping {rhos_prev_long} services].
 
@@ -207,7 +207,7 @@ $ glance stores-info
 +----------+----------------------------------------------------------------------------------+
 ----
 +
-The output should list one store for each {Ceph} back end configured in the central `GlanceAPI`, and the central store should be marked as the default. If any stores are missing, check the `customServiceConfig` in the `glanceAPIs` section of the patch and verify that the {Ceph} configuration files are present in the `ceph-conf-central` secret.
+The output should list one store for each {Ceph} back end configured in the central `GlanceAPI`, and the central store should be marked as the default. If any stores are missing, check the `customServiceConfig` in the `glanceAPIs` section of the patch and verify that the {Ceph} configuration files are present in the `ceph-conf-files` secret.
 
 . Verify that image import methods include `copy-image`, which is required for copying images between stores:
 +
